@@ -3,7 +3,7 @@
 Internal tool for exercising backend APIs from the same OpenAPI
 contract that `oapi-codegen` uses to generate the server.
 
-This is **Phase 1 (API Explorer)** — not a Postman replacement. The OpenAPI
+This is **Phase 1 (API Explorer)** — The OpenAPI
 spec is the single source of truth: new endpoints appear here automatically.
 
 ```
