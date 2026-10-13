@@ -16,7 +16,7 @@ var (
 func newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "apismith",
-		Short:         "OpenAPI-driven API testing for Nimbus",
+		Short:         "OpenAPI-driven API testing",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Long:          rootHelp,

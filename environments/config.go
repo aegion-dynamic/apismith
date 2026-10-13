@@ -182,8 +182,6 @@ func (c *Config) resolveOpenAPISpec(configDir string) error {
 		c.OpenAPISpec,
 		filepath.Join(configDir, "..", "openapi", "openapi.yaml"),
 		"openapi/openapi.yaml",
-		"../framework-backend/nimbus_openapi_spec.yaml",
-		"../framework-backend/docs/content/docs/openapi.yaml",
 	})
 	for _, p := range candidates {
 		if p == "" {

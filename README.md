@@ -1,6 +1,6 @@
 # apismith
 
-Internal tool for exercising Nimbus backend APIs from the same OpenAPI
+Internal tool for exercising backend APIs from the same OpenAPI
 contract that `oapi-codegen` uses to generate the server.
 
 This is **Phase 1 (API Explorer)** — not a Postman replacement. The OpenAPI
@@ -82,13 +82,7 @@ apismith attaches the access token, not the ID token.
 
 ### OpenAPI spec
 
-By default apismith loads the sibling backend spec:
-
-```
-../framework-backend/nimbus_openapi_spec.yaml
-```
-
-Override with `CONSOLE_OPENAPI_SPEC`, or place a copy at `openapi/openapi.yaml`.
+Place the OpenAPI spec at `openapi/openapi.yaml`, or set `CONSOLE_OPENAPI_SPEC` to another path.
 
 ### Environments
 

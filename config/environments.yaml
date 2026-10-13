@@ -2,7 +2,7 @@
 # Secrets belong in config/credentials.yaml or environment variables, not here.
 
 listen: "127.0.0.1:8090" # loopback only; the console has no auth of its own
-openapi_spec: "nimbus_openapi_spec.yaml"
+openapi_spec: "openapi/openapi.yaml"
 default_environment: dev
 
 environments:
