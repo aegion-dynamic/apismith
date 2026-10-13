@@ -16,7 +16,7 @@ func TestHelpListsActions(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := buf.String()
-	for _, want := range []string{"ui", "jwt", "ls", "call", "Notes:", "Examples:", "OpenAPI spec"} {
+	for _, want := range []string{"ui", "jwt", "ls", "call", "run", "Notes:", "Examples:", "OpenAPI spec"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("help missing %q:\n%s", want, out)
 		}
@@ -41,7 +41,7 @@ func TestCallHelpMentionsBaseURL(t *testing.T) {
 }
 
 func TestActionHelpHasNotes(t *testing.T) {
-	for _, action := range []string{"ui", "jwt", "ls", "call"} {
+	for _, action := range []string{"ui", "jwt", "ls", "call", "run"} {
 		cmd := newRootCmd()
 		buf := &bytes.Buffer{}
 		cmd.SetOut(buf)

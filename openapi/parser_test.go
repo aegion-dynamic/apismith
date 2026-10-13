@@ -41,6 +41,10 @@ func TestLoadFixture(t *testing.T) {
 	if create.RequestBody == nil || create.RequestBody.ExampleJSON == "" {
 		t.Fatal("expected generated request body example")
 	}
+	schema := cat.ResponseSchema("POST", "/users", 201)
+	if schema == nil || schema.Type != "object" {
+		t.Fatalf("response schema: %+v", schema)
+	}
 	if getByID.Parameters[0].Name != "id" || getByID.Parameters[0].In != "path" {
 		t.Fatalf("path param: %+v", getByID.Parameters)
 	}

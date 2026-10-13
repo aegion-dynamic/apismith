@@ -30,8 +30,15 @@
 
   <main class="layout">
     <aside class="sidebar">
+      <div class="side-tabs">
+        <button type="button" data-side="apis" class="active">APIs</button>
+        <button type="button" data-side="saved">Saved</button>
+        <button type="button" data-side="sequences">Sequences</button>
+      </div>
       <input id="api-search" class="search" type="search" placeholder="Search APIs…" autocomplete="off" />
       <nav id="endpoint-list" class="endpoint-list"></nav>
+      <nav id="saved-list" class="endpoint-list hidden"></nav>
+      <nav id="sequence-list" class="endpoint-list hidden"></nav>
     </aside>
 
     <section class="workspace">
@@ -73,6 +80,15 @@
         </label>
       </section>
 
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Variables</h2>
+          <button type="button" id="btn-add-var" class="ghost">Add</button>
+        </div>
+        <p class="muted var-help">Use <code>{{name}}</code> in a param, header, or body. <code>{{uuid}}</code> and <code>{{now}}</code> are filled when the request is sent. In a sequence, <code>{{index}}</code> is the step number, starting at 1. Values stay in this process and are not written to disk.</p>
+        <div id="var-rows"></div>
+      </section>
+
       <section class="panel request-panel">
         <div class="panel-head">
           <h2 id="op-title">Select an API</h2>
@@ -95,6 +111,8 @@
             <div class="toggle">
               <button type="button" data-body-mode="form" class="active">Form</button>
               <button type="button" data-body-mode="json">JSON</button>
+              <button type="button" data-body-mode="text">Text</button>
+              <button type="button" data-body-mode="file">File</button>
             </div>
           </div>
           <div id="body-form" class="params"></div>
@@ -105,25 +123,74 @@
             </div>
             <textarea id="body-json" spellcheck="false"></textarea>
           </div>
+          <div id="body-text-wrap" class="hidden">
+            <textarea id="body-text" spellcheck="false" placeholder="Raw request body"></textarea>
+          </div>
+          <div id="body-file-wrap" class="hidden">
+            <input id="body-file" type="file" />
+            <p id="file-name" class="muted">No file chosen. The file is sent as text.</p>
+          </div>
+        </div>
+
+        <div class="headers-block">
+          <div class="panel-head tight">
+            <h3>Headers</h3>
+            <button type="button" id="btn-add-header" class="ghost">Add</button>
+          </div>
+          <div id="extra-headers"></div>
         </div>
 
         <div class="actions">
           <button type="button" id="btn-send" class="primary send" disabled>Send Request</button>
-          <button type="button" id="btn-copy-request" class="ghost" disabled>Copy Request</button>
+          <button type="button" id="btn-save-request" class="ghost" disabled>Save</button>
+          <button type="button" id="btn-fill-example" class="ghost" disabled>Fill example</button>
+          <button type="button" id="btn-copy-curl" class="ghost" disabled>Copy curl</button>
+          <button type="button" id="btn-copy-call" class="ghost" disabled>Copy call</button>
+          <span id="action-note" class="muted"></span>
         </div>
+      </section>
+
+      <section class="panel" id="sequence-panel">
+        <div class="panel-head">
+          <h2>Sequence</h2>
+          <div class="inline">
+            <button type="button" id="btn-seq-new" class="ghost">New</button>
+            <button type="button" id="btn-seq-save" class="ghost">Save</button>
+            <button type="button" id="btn-seq-delete" class="ghost">Delete</button>
+            <button type="button" id="btn-seq-run" class="primary">Run</button>
+          </div>
+        </div>
+        <p class="muted var-help">Steps run in order. A capture named <code>userId</code> with path <code>$.id</code> fills <code>{{userId}}</code> for the next step. The run stops on the first miss.</p>
+        <label class="field">
+          <span>Name</span>
+          <input id="seq-name" spellcheck="false" placeholder="signup" />
+        </label>
+        <div id="seq-steps" class="seq-steps"></div>
+        <div class="actions">
+          <button type="button" id="btn-seq-add" class="ghost">Add current request</button>
+          <select id="seq-saved-pick"></select>
+          <button type="button" id="btn-seq-add-saved" class="ghost">Add saved</button>
+          <button type="button" id="btn-seq-update" class="ghost">Update selected step</button>
+        </div>
+        <p id="seq-note" class="muted"></p>
+        <div id="seq-results"></div>
       </section>
 
       <section class="panel response-panel">
         <div class="panel-head">
           <h2>Response</h2>
-          <div id="response-meta" class="response-meta muted">No request sent yet</div>
+          <div class="inline response-head">
+            <span id="schema-note" class="chip hidden"></span>
+            <div id="response-meta" class="response-meta muted">No request sent yet</div>
+          </div>
         </div>
+        <div id="schema-notes" class="error-text"></div>
         <div class="tabs">
           <button type="button" data-tab="body" class="active">Body</button>
           <button type="button" data-tab="headers">Headers</button>
           <button type="button" data-tab="raw">Raw</button>
         </div>
-        <pre id="response-view" class="response-view">Awaiting a request.</pre>
+        <div id="response-view" class="response-view text">Awaiting a request.</div>
         <div class="actions">
           <button type="button" id="btn-copy-response" class="ghost" disabled>Copy Response</button>
         </div>

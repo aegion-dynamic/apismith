@@ -62,9 +62,12 @@ type RequestBody struct {
 }
 
 // ResponseInfo is a compact description of an operation response.
+// Schema is kept for the console's response check and is not sent to the browser.
 type ResponseInfo struct {
-	Status      string `json:"status"`
-	Description string `json:"description,omitempty"`
+	Status      string      `json:"status"`
+	Description string      `json:"description,omitempty"`
+	ContentType string      `json:"content_type,omitempty"`
+	Schema      *SchemaView `json:"-"`
 }
 
 // Load parses an OpenAPI 3 document and returns the catalog used by the UI.
@@ -237,7 +240,15 @@ func collectResponses(op *openapi3.Operation) []ResponseInfo {
 		if ref != nil && ref.Value != nil && ref.Value.Description != nil {
 			desc = *ref.Value.Description
 		}
-		out = append(out, ResponseInfo{Status: code, Description: desc})
+		info := ResponseInfo{Status: code, Description: desc}
+		if ref != nil && ref.Value != nil {
+			ct, media := preferredMedia(ref.Value.Content)
+			if media != nil {
+				info.ContentType = ct
+				info.Schema = viewFromRef(media.Schema, nil)
+			}
+		}
+		out = append(out, info)
 	}
 	return out
 }

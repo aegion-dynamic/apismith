@@ -6,7 +6,9 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"aegion-dynamic/apismith/auth"
@@ -26,16 +28,35 @@ type Server struct {
 	auth    *auth.Manager
 	exec    *request.Executor
 	history *request.History
+	lib     *request.Library
+	vars    *request.Vars
+	runMu   sync.Mutex
 }
 
 // New constructs a console server around loaded config and catalog.
+// History and the saved-request library live next to the environments file.
 func New(cfg *environments.Config, catalog *openapi.Catalog) *Server {
+	dir := "config"
+	if cfg != nil && strings.TrimSpace(cfg.Path) != "" {
+		dir = filepath.Dir(cfg.Path)
+	}
+	hist := request.NewHistory(80)
+	if err := hist.LoadFile(filepath.Join(dir, "history.json")); err != nil {
+		log.Printf("history load: %v", err)
+	}
+	lib, err := request.OpenLibrary(filepath.Join(dir, "library"))
+	if err != nil {
+		log.Printf("library: %v", err)
+		lib = &request.Library{}
+	}
 	return &Server{
 		cfg:     cfg,
 		catalog: catalog,
 		auth:    auth.NewManager(),
 		exec:    request.NewExecutor(),
-		history: request.NewHistory(80),
+		history: hist,
+		lib:     lib,
+		vars:    request.NewVars(),
 	}
 }
 
@@ -44,7 +65,7 @@ func (s *Server) Handler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(180 * time.Second))
 	r.Use(requestLogger)
 
 	r.Route("/api", func(r chi.Router) {
@@ -55,6 +76,18 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/auth/jwt", s.handleGenerateJWT)
 		r.Post("/auth/clear", s.handleClearAuth)
 		r.Post("/request", s.handleExecute)
+		r.Post("/snippet", s.handleSnippet)
+		r.Get("/saved", s.handleSavedList)
+		r.Put("/saved", s.handleSavedPut)
+		r.Delete("/saved/{name}", s.handleSavedDelete)
+		r.Get("/sequences", s.handleSequenceList)
+		r.Put("/sequences", s.handleSequencePut)
+		r.Get("/sequences/{name}", s.handleSequenceGet)
+		r.Delete("/sequences/{name}", s.handleSequenceDelete)
+		r.Post("/run", s.handleRun)
+		r.Get("/variables", s.handleVarsGet)
+		r.Put("/variables", s.handleVarsPut)
+		r.Delete("/variables/{name}", s.handleVarsDelete)
 		r.Get("/history", s.handleHistory)
 		r.Get("/history/{id}", s.handleHistoryItem)
 		r.Post("/history/clear", s.handleHistoryClear)
@@ -217,10 +250,12 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := s.exec.Execute(in, baseURL, env.Production)
+	expanded := request.ExpandInput(in, s.vars.Snapshot(), 1)
+	out := s.exec.Execute(expanded, baseURL, env.Production)
 	if strings.Contains(strings.ToLower(out.ContentType), "json") {
 		out.Body = request.PrettyJSON(out.Body)
 	}
+	applySchema(s.catalog, in.Method, in.Path, &out)
 
 	item := s.history.Add(request.HistoryItem{
 		Environment: in.Environment,
@@ -228,8 +263,10 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 		Path:        in.Path,
 		PathParams:  in.PathParams,
 		Query:       in.Query,
-		Headers:     out.RequestMasked,
+		Headers:     in.Headers,
 		Body:        in.Body,
+		BodyType:    in.BodyType,
+		ContentType: in.ContentType,
 		AuthMode:    in.AuthMode,
 		Status:      out.Status,
 		DurationMS:  out.DurationMS,

@@ -40,6 +40,8 @@ type ExecuteInput struct {
 	Query             map[string]string `json:"query"`
 	Headers           map[string]string `json:"headers"`
 	Body              string            `json:"body"`
+	BodyType          string            `json:"body_type,omitempty"`
+	ContentType       string            `json:"content_type,omitempty"`
 	AuthMode          AuthMode          `json:"auth_mode"`
 	JWT               string            `json:"jwt"`
 	CustomAuth        string            `json:"custom_authorization"`
@@ -62,6 +64,10 @@ type ExecuteOutput struct {
 	Truncated     bool              `json:"truncated"`
 	Error         string            `json:"error,omitempty"`
 	RequestMasked map[string]string `json:"request_headers_masked"`
+	// SchemaOK is set when the spec has a JSON schema for this status.
+	// Nil means the spec has nothing to check.
+	SchemaOK    *bool    `json:"schema_ok,omitempty"`
+	SchemaNotes []string `json:"schema_notes,omitempty"`
 }
 
 // Executor sends HTTP requests to a configured base URL.
@@ -186,8 +192,18 @@ func (e *Executor) Execute(in ExecuteInput, baseURL string, production bool) Exe
 		}
 	}
 
+	if req.Header.Get("Content-Type") == "" && in.ContentType != "" {
+		req.Header.Set("Content-Type", in.ContentType)
+	}
 	if body != nil && req.Header.Get("Content-Type") == "" {
-		req.Header.Set("Content-Type", "application/json")
+		switch in.BodyType {
+		case "text":
+			req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+		case "file":
+			req.Header.Set("Content-Type", "application/octet-stream")
+		default:
+			req.Header.Set("Content-Type", "application/json")
+		}
 	}
 
 	masked := MaskHeaders(req.Header)

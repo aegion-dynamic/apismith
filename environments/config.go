@@ -53,6 +53,7 @@ type Credentials struct {
 
 // Config is the runtime configuration after file load + env overlays.
 type Config struct {
+	Path               string // environments file, used to place history and the library beside it
 	Listen             string
 	OpenAPISpec        string
 	DefaultEnvironment string
