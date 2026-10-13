@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"aegion-dynamic/apismith/auth/cognito"
@@ -197,25 +196,7 @@ func parseKV(items []string) (map[string]string, error) {
 }
 
 func statusMatches(out request.ExecuteOutput, expect string) bool {
-	if out.Error != "" {
-		return false
-	}
-	expect = strings.TrimSpace(expect)
-	if expect == "" {
-		return out.OK
-	}
-	if strings.HasSuffix(strings.ToLower(expect), "xx") && len(expect) == 3 {
-		class, err := strconv.Atoi(expect[:1])
-		if err != nil {
-			return false
-		}
-		return out.Status/100 == class
-	}
-	want, err := strconv.Atoi(expect)
-	if err != nil {
-		return false
-	}
-	return out.Status == want
+	return request.StatusOK(out.Status, out.Error, expect)
 }
 
 func printCall(ep *openapi.Endpoint, out request.ExecuteOutput, quiet bool) error {

@@ -25,7 +25,7 @@ func newRootCmd() *cobra.Command {
 	cmd.CompletionOptions.DisableDefaultCmd = true
 	cmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "environments.yaml path (default config/environments.yaml)")
 	cmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "machine-readable JSON output")
-	cmd.AddCommand(newUICmd(), newJWTCmd(), newLSCmd(), newCallCmd())
+	cmd.AddCommand(newUICmd(), newJWTCmd(), newLSCmd(), newCallCmd(), newRunCmd())
 	return cmd
 }
 

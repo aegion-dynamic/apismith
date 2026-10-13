@@ -9,6 +9,11 @@
 # Credentials — never commit secrets or JWTs
 config/credentials.yaml
 config/credentials.json
+
+# Local console state. Saved requests may contain sample payloads.
+config/history.json
+config/history.json.tmp
+config/library/
 *.pem
 .env
 .env.*

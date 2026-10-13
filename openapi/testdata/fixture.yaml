@@ -37,6 +37,14 @@ paths:
       responses:
         "201":
           description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
   /users/{id}:
     get:
       tags: [users]

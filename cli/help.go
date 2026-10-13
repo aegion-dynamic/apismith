@@ -8,6 +8,7 @@ Actions:
   jwt    generate a Cognito access token
   ls     list operations from the OpenAPI spec
   call   send one request
+  run    send a saved sequence of requests
 
 Notes:
   The OpenAPI spec is the source of truth. call and ls fail if the
@@ -36,7 +37,8 @@ const rootExamples = `  apismith ui
   apismith ls --search login
   apismith jwt --token-only
   apismith call GET /users/me --env staging
-  apismith call GET /users/me --base-url https://staging.example.com/api/v1`
+  apismith call GET /users/me --base-url https://staging.example.com/api/v1
+  apismith run config/library/sequences/signup.yaml`
 
 const uiHelp = `Start the local API explorer.
 
@@ -137,6 +139,38 @@ Notes:
   the environment's configured URL. Auth still comes from --env.
 
   Production targets require --confirm-production.`
+
+const runHelp = `Run a sequence of requests from a YAML file.
+
+Each step is an operation: method, path, params, and body. {{name}}
+is filled from --var and from earlier captures. {{uuid}} and {{now}}
+are filled when the step is sent. The run stops on the first step
+that misses its expected status or capture path.
+
+Notes:
+  A step with no auth_mode uses the command default (a Cognito access
+  token, or none with --no-auth). A step can set auth_mode: none or
+  auth_mode: jwt on its own.
+
+  expect is a status code (201) or a class (2xx). Omit it to accept
+  any 2xx or 3xx.
+
+  capture maps a variable name to a JSON path ($.id, $.items[0].id).
+  The value is available to later steps as {{id}}.
+
+  Steps that only set "saved" load that request from the library next
+  to the environments file. Steps with method and path are portable
+  and do not need the library.
+
+  Tokens are not written into the sequence file. --json prints the
+  step results. Exit 0 when every step passes, 1 otherwise.
+
+  Production targets require --confirm-production.`
+
+const runExamples = `  apismith run sequences/signup.yaml --env dev
+  apismith run sequences/signup.yaml --var email=a@b.com
+  apismith run sequences/public.yaml --no-auth
+  apismith run sequences/signup.yaml --json`
 
 const callExamples = `  apismith call GET /users/me --env dev
   apismith call GET /users/me --base-url https://staging.example.com/api/v1

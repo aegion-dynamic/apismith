@@ -19,6 +19,7 @@ apismith ui                         # local explorer
 apismith jwt                        # Cognito access token
 apismith ls                         # list operations from OpenAPI
 apismith call METHOD PATH           # send one request
+apismith run sequence.yaml          # run a saved sequence
 ```
 
 ## What you can do
@@ -31,6 +32,7 @@ apismith call METHOD PATH           # send one request
 6. Fill path/query params and a form or JSON body
 7. Send the request through the local proxy
 8. Inspect status, timing, headers, and body
+9. Save the request, or add it to a sequence that can capture values from one response and pass them to the next call
 
 The browser talks only to this process. The process attaches
 `Authorization: Bearer <access token>` and forwards the call, which avoids
@@ -68,6 +70,9 @@ apismith call GET /users/{id} --path id=123 --query page=1
 apismith call createUser --body-file user.json
 apismith call POST /auth/login --no-auth --body-file login.json
 apismith call GET /missing --expect 404
+
+apismith run sequences/signup.yaml --env dev
+apismith run sequences/signup.yaml --var email=a@b.com
 ```
 
 `call` exits `0` on 2xx (or when `--expect` matches) and `1` otherwise.
@@ -138,9 +143,37 @@ cmd/console/      alias for `apismith ui`
   do not expose it on an untrusted network without adding protection.
 - Production requests require confirmation.
 
-## Later phases (not in this MVP)
+## Saved requests, variables, and sequences
 
-- Saved requests
-- Repeatable test cases, variables, cleanup
-- `apismith run --env staging --suite regression`
-- CI/CD gate on failed tests
+The explorer keeps three kinds of local state next to `environments.yaml`:
+
+- **Saved requests** and **sequences** are YAML files under `config/library/`. They are gitignored. A sequence file can also live anywhere and be passed to `apismith run`.
+- **History** is `config/history.json`. It is reloaded on the next start. Authorization values are not stored.
+- **Variables** (`{{name}}`, plus `{{uuid}}`, `{{now}}`, and `{{index}}` in a sequence) live in the process only. A captured token is not written to disk.
+
+In the UI, save the current call, fill `{{name}}` into any param or body, and build a sequence with **Add current request**. Each step can expect a status (`201` or `2xx`) and capture a JSON path (`$.id`) into a variable. **Copy curl** writes `$JWT` instead of the access token. **Copy call** prints an `apismith call` command with the token omitted. **Fill example** loads the spec example into the body. The response body is a tree: **Copy** takes the value, **Use** stores it as a variable. A schema chip says whether a JSON body matches the response schema in the spec.
+
+A sequence file looks like this:
+
+```yaml
+name: signup
+steps:
+  - id: create
+    method: POST
+    path: /users
+    body: '{"email":"{{email}}"}'
+    auth_mode: none
+    expect: "201"
+    capture:
+      userId: $.id
+  - id: fetch
+    method: GET
+    path: /users/{id}
+    path_params:
+      id: "{{userId}}"
+    expect: "200"
+```
+
+## Later
+
+- CI/CD gate on a failed sequence
